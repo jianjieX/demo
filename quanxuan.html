@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>全选、反选</title>
+    <style>
+        li{
+            list-style: none;
+        }
+        .container{
+            box-shadow: 0 0 2px #000c17;
+            padding:20px;
+            width: 50%;
+        }
+        .top{
+            display: flex;
+        }
+        .content{
+            border:1px solid #000;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <ul class="top">
+            <li><input type="checkbox" name="all">全选</li>
+            <li><input type="checkbox" name="inverse">反选</li>
+        </ul>
+        <ul class="content">
+            <li><input type="checkbox">选项一</li>
+            <li><input type="checkbox">选项二</li>
+            <li><input type="checkbox">选项三</li>
+            <li><input type="checkbox">选项四</li>
+            <li><input type="checkbox">选项五</li>
+        </ul>
+    </div>
+</body>
+<script>
+    //定义一个构造函数
+    function Select() {
+
+    }
+    //初始化
+    Select.prototype.init=function () {
+        this.ALL=document.querySelector('input[name="all"]'); //全选按钮
+        this.INVERSE=document.querySelector('input[name="inverse"]'); //反选按钮
+        this.OPTIONS=document.querySelectorAll('.content input'); //单选选项
+        this.OPTIONPARENT=document.querySelector('.content'); //单选选项外层包裹容器
+        this.bindEvent();
+    }
+    Select.prototype.bindEvent=function () {
+        this.ALL.onclick=this.checkAll.bind(this);
+        this.OPTIONPARENT.onclick=this.checkOption.bind(this);
+        this.INVERSE.onclick=this.checkInverse.bind(this);
+    }
+    //点击全选
+    Select.prototype.checkAll=function () {
+        this.OPTIONS.forEach(item=>{
+            item.checked=this.ALL.checked;
+        })
+        this.INVERSE.checked=false;
+    }
+    //使用事件委托方式,判断单选与全选、反选关系
+    Select.prototype.checkOption=function (event) {
+        let e=event||window.event;
+        let option=e.srcElement||e.target;
+        if(option.nodeName.toLowerCase() == 'input'){
+            let flag=true;
+            this.OPTIONS.forEach(item=>{
+               if(item.checked===false){
+                   flag=false;
+               }
+            })
+            this.ALL.checked=flag;
+            this.INVERSE.checked=false;
+        }
+    }
+    //点击反选
+    Select.prototype.checkInverse=function () {
+        let flag=true;
+        this.OPTIONS.forEach(item=>{
+            item.checked=!item.checked;
+            if(item.checked===false){
+                flag=false
+            }
+        })
+        this.ALL.checked=flag;
+    }
+    //声明一个实例
+    let selector=new Select();
+    selector.init();
+</script>
+</html>
