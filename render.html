@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+</head>
+<body>
+	<div class="container">
+		
+	</div>
+</body>
+<script type="text/javascript">
+	var options=[
+		{
+             "attributeName": "版本",
+             "attributeValue": ["8GB+128GB", "6GB+128GB"]
+         },
+		{
+             "attributeName": "颜色",
+             "attributeValue": ["亮黑色", "极光色", "罗兰紫", "星河银", "翡冷翠"]
+         }
+    ];
+	let html1='';
+	options.forEach((item,index)=>{
+	    html1+=`
+	    <div class="line">
+			<div class="name">${item.attributeName}</div>
+			<div class=${'btn_'+index}></div>
+		</div>
+	    `;
+	})
+	document.querySelector('.container').innerHTML=html1;
+		options.forEach((item,index)=>{
+	    var html2='';
+	    item.attributeValue.forEach(items=>{
+	    	html2+=`<button>${items}</button>`
+	    })
+	    document.querySelector('.btn_'+index).innerHTML=html2;
+	})
+
+</script>
+</html>
