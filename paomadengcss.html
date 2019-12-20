@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<title></title>
+	<script src="https://cdn.bootcss.com/jquery/3.4.1/jquery.min.js"></script>
+	<style type="text/css">
+		
+.scroll-area{
+    position:relative;
+    height:40px;
+    border:1px solid #ccc;
+    width:100px;
+    overflow:hidden;
+}
+                        
+.scroll{
+    position:absolute;
+    line-height:40px;
+    left:100%;
+    top:0px;
+    white-space: nowrap;
+/*    -webkit-animation:todayScroll 10s linear infinite;
+    animation:todayScroll 10s linear infinite;*/
+}
+
+/*只加了这个样式*/
+.today-scroll-content{
+    margin-right:3em;
+}
+                        
+@-webkit-keyframes todayScroll  {
+    0% {-webkit-transform:translate(0%);}
+    100% {-webkit-transform:translate(-100%);}
+}
+                        
+@keyframes todayScroll {
+    0% {transform:translate(0%);}
+    100% {transform:translate(-100%);}
+}
+  
+	</style>
+</head>
+<body>
+<div class="scroll-area">
+    <div class="scroll">
+        <!--scroll是滚动的，内部的两个元素不滚动-->
+        <span class="today-scroll-content">这是一个跑马灯1</span>
+        <span class="today-scroll-content">这是一个跑马灯2</span>
+        <span class="today-scroll-content">这是一个跑马灯3</span>
+        <span class="today-scroll-content">这是一个跑马灯4</span>
+        <span class="today-scroll-content">这是一个跑马灯5</span>
+        <span class="today-scroll-content">这是一个跑马灯6</span>
+    </div>
+</div>
+</body>
+<script type="text/javascript">
+	var time=3;
+	$('.scroll').css({
+		 animation:`todayScroll ${time*4}s linear infinite`,
+		 '-webkit-animation':`todayScroll ${time*4}s linear infinite`
+	})
+</script>
+</html>
