@@ -1,0 +1,1670 @@
+<html lang="en"><head>
+ <title>2020新年倒计时</title>
+  <meta charset="UTF-8">
+
+
+<script src="https://www.moage.cn/static/w2a/js/jquery.js"></script>
+
+<script>var Base = function() {};
+Base.extend = function(_instance, _static) {
+    "use strict";
+    var extend = Base.prototype.extend;
+    Base._prototyping = true;
+    var proto = new this();
+    extend.call(proto, _instance);
+    proto.base = function() {};
+    delete Base._prototyping;
+    var constructor = proto.constructor;
+    var klass = proto.constructor = function() {
+        if (!Base._prototyping) {
+            if (this._constructing || this.constructor == klass) {
+                this._constructing = true;
+                constructor.apply(this, arguments);
+                delete this._constructing;
+            } else if (arguments[0] !== null) {
+                return (arguments[0].extend || extend).call(arguments[0], proto);
+            }
+        }
+    };
+    klass.ancestor = this;
+    klass.extend = this.extend;
+    klass.forEach = this.forEach;
+    klass.implement = this.implement;
+    klass.prototype = proto;
+    klass.toString = this.toString;
+    klass.valueOf = function(type) {
+        return (type == "object") ? klass: constructor.valueOf();
+    };
+    extend.call(klass, _static);
+    if (typeof klass.init == "function") klass.init();
+    return klass;
+};
+Base.prototype = {
+    extend: function(source, value) {
+        if (arguments.length > 1) {
+            var ancestor = this[source];
+            if (ancestor && (typeof value == "function") && (!ancestor.valueOf || ancestor.valueOf() != value.valueOf()) && /\bbase\b/.test(value)) {
+                var method = value.valueOf();
+                value = function() {
+                    var previous = this.base || Base.prototype.base;
+                    this.base = ancestor;
+                    var returnValue = method.apply(this, arguments);
+                    this.base = previous;
+                    return returnValue;
+                };
+                value.valueOf = function(type) {
+                    return (type == "object") ? value: method;
+                };
+                value.toString = Base.toString;
+            }
+            this[source] = value;
+        } else if (source) {
+            var extend = Base.prototype.extend;
+            if (!Base._prototyping && typeof this != "function") {
+                extend = this.extend || extend;
+            }
+            var proto = {
+                toSource: null
+            };
+            var hidden = ["constructor", "toString", "valueOf"];
+            var i = Base._prototyping ? 0 : 1;
+            while (key = hidden[i++]) {
+                if (source[key] != proto[key]) {
+                    extend.call(this, key, source[key]);
+                }
+            }
+            for (var key in source) {
+                if (!proto[key]) extend.call(this, key, source[key]);
+            }
+        }
+        return this;
+    }
+};
+Base = Base.extend({
+    constructor: function() {
+        this.extend(arguments[0]);
+    }
+},
+{
+    ancestor: Object,
+    version: "1.1",
+    forEach: function(object, block, context) {
+        for (var key in object) {
+            if (this.prototype[key] === undefined) {
+                block.call(context, object[key], key, object);
+            }
+        }
+    },
+    implement: function() {
+        for (var i = 0; i < arguments.length; i++) {
+            if (typeof arguments[i] == "function") {
+                arguments[i](this.prototype);
+            } else {
+                this.prototype.extend(arguments[i]);
+            }
+        }
+        return this;
+    },
+    toString: function() {
+        return String(this.valueOf());
+    }
+});
+var FlipClock; (function($) {
+    "use strict";
+    FlipClock = function(obj, digit, options) {
+        if (digit instanceof Object && digit instanceof Date === false) {
+            options = digit;
+            digit = 0;
+        }
+        return new FlipClock.Factory(obj, digit, options);
+    };
+    FlipClock.Lang = {};
+    FlipClock.Base = Base.extend({
+        buildDate: '2014-12-12',
+        version: '0.7.7',
+        constructor: function(_default, options) {
+            if (typeof _default !== "object") {
+                _default = {};
+            }
+            if (typeof options !== "object") {
+                options = {};
+            }
+            this.setOptions($.extend(true, {},
+            _default, options));
+        },
+        callback: function(method) {
+            if (typeof method === "function") {
+                var args = [];
+                for (var x = 1; x <= arguments.length; x++) {
+                    if (arguments[x]) {
+                        args.push(arguments[x]);
+                    }
+                }
+                method.apply(this, args);
+            }
+        },
+        log: function(str) {
+            if (window.console && console.log) {
+                console.log(str);
+            }
+        },
+        getOption: function(index) {
+            if (this[index]) {
+                return this[index];
+            }
+            return false;
+        },
+        getOptions: function() {
+            return this;
+        },
+        setOption: function(index, value) {
+            this[index] = value;
+        },
+        setOptions: function(options) {
+            for (var key in options) {
+                if (typeof options[key] !== "undefined") {
+                    this.setOption(key, options[key]);
+                }
+            }
+        }
+    });
+} (jQuery)); (function($) {
+    "use strict";
+    FlipClock.Face = FlipClock.Base.extend({
+        autoStart: true,
+        dividers: [],
+        factory: false,
+        lists: [],
+        constructor: function(factory, options) {
+            this.dividers = [];
+            this.lists = [];
+            this.base(options);
+            this.factory = factory;
+        },
+        build: function() {
+            if (this.autoStart) {
+                this.start();
+            }
+        },
+        createDivider: function(label, css, excludeDots) {
+            if (typeof css == "boolean" || !css) {
+                excludeDots = css;
+                css = label;
+            }
+            var dots = ['<span class="' + this.factory.classes.dot + ' top"></span>', '<span class="' + this.factory.classes.dot + ' bottom"></span>'].join('');
+            if (excludeDots) {
+                dots = '';
+            }
+            label = this.factory.localize(label);
+            var html = ['<span class="' + this.factory.classes.divider + ' ' + (css ? css: '').toLowerCase() + '">', '<span class="' + this.factory.classes.label + '">' + (label ? label: '') + '</span>', dots, '</span>'];
+            var $html = $(html.join(''));
+            this.dividers.push($html);
+            return $html;
+        },
+        createList: function(digit, options) {
+            if (typeof digit === "object") {
+                options = digit;
+                digit = 0;
+            }
+            var obj = new FlipClock.List(this.factory, digit, options);
+            this.lists.push(obj);
+            return obj;
+        },
+        reset: function() {
+            this.factory.time = new FlipClock.Time(this.factory, this.factory.original ? Math.round(this.factory.original) : 0, {
+                minimumDigits: this.factory.minimumDigits
+            });
+            this.flip(this.factory.original, false);
+        },
+        appendDigitToClock: function(obj) {
+            obj.$el.append(false);
+        },
+        addDigit: function(digit) {
+            var obj = this.createList(digit, {
+                classes: {
+                    active: this.factory.classes.active,
+                    before: this.factory.classes.before,
+                    flip: this.factory.classes.flip
+                }
+            });
+            this.appendDigitToClock(obj);
+        },
+        start: function() {},
+        stop: function() {},
+        autoIncrement: function() {
+            if (!this.factory.countdown) {
+                this.increment();
+            } else {
+                this.decrement();
+            }
+        },
+        increment: function() {
+            this.factory.time.addSecond();
+        },
+        decrement: function() {
+            if (this.factory.time.getTimeSeconds() == 0) {
+                this.factory.stop()
+            } else {
+                this.factory.time.subSecond();
+            }
+        },
+        flip: function(time, doNotAddPlayClass) {
+            var t = this;
+            $.each(time,
+            function(i, digit) {
+                var list = t.lists[i];
+                if (list) {
+                    if (!doNotAddPlayClass && digit != list.digit) {
+                        list.play();
+                    }
+                    list.select(digit);
+                } else {
+                    t.addDigit(digit);
+                }
+            });
+        }
+    });
+} (jQuery)); (function($) {
+    "use strict";
+    FlipClock.Factory = FlipClock.Base.extend({
+        animationRate: 1000,
+        autoStart: true,
+        callbacks: {
+            destroy: false,
+            create: false,
+            init: false,
+            interval: false,
+            start: false,
+            stop: false,
+            reset: false
+        },
+        classes: {
+            active: 'flip-clock-active',
+            before: 'flip-clock-before',
+            divider: 'flip-clock-divider',
+            dot: 'flip-clock-dot',
+            label: 'flip-clock-label',
+            flip: 'flip',
+            play: 'play',
+            wrapper: 'flip-clock-wrapper'
+        },
+        clockFace: 'HourlyCounter',
+        countdown: false,
+        defaultClockFace: 'HourlyCounter',
+        defaultLanguage: 'zh-cn',
+        $el: false,
+        face: true,
+        lang: false,
+        language: 'chinese',
+        minimumDigits: 0,
+        original: false,
+        running: false,
+        time: false,
+        timer: false,
+        $wrapper: false,
+        constructor: function(obj, digit, options) {
+            if (!options) {
+                options = {};
+            }
+            this.lists = [];
+            this.running = false;
+            this.base(options);
+            this.$el = $(obj).addClass(this.classes.wrapper);
+            this.$wrapper = this.$el;
+            this.original = (digit instanceof Date) ? digit: (digit ? Math.round(digit) : 0);
+            this.time = new FlipClock.Time(this, this.original, {
+                minimumDigits: this.minimumDigits,
+                animationRate: this.animationRate
+            });
+            this.timer = new FlipClock.Timer(this, options);
+            this.loadLanguage(this.language);
+            this.loadClockFace(this.clockFace, options);
+            if (this.autoStart) {
+                this.start();
+            }
+        },
+        loadClockFace: function(name, options) {
+            var face, suffix = 'Face',
+            hasStopped = false;
+            name = name.ucfirst() + suffix;
+            if (this.face.stop) {
+                this.stop();
+                hasStopped = true;
+            }
+            this.$el.html('');
+            this.time.minimumDigits = this.minimumDigits;
+            if (FlipClock[name]) {
+                face = new FlipClock[name](this, options);
+            } else {
+                face = new FlipClock[this.defaultClockFace + suffix](this, options);
+            }
+            face.build();
+            this.face = face
+            if (hasStopped) {
+                this.start();
+            }
+            return this.face;
+        },
+        loadLanguage: function(name) {
+            var lang;
+            if (FlipClock.Lang[name.ucfirst()]) {
+                lang = FlipClock.Lang[name.ucfirst()];
+            } else if (FlipClock.Lang[name]) {
+                lang = FlipClock.Lang[name];
+            } else {
+                lang = FlipClock.Lang[this.defaultLanguage];
+            }
+            return this.lang = lang;
+        },
+        localize: function(index, obj) {
+            var lang = this.lang;
+            if (!index) {
+                return null;
+            }
+            var lindex = index.toLowerCase();
+            if (typeof obj == "object") {
+                lang = obj;
+            }
+            if (lang && lang[lindex]) {
+                return lang[lindex];
+            }
+            return index;
+        },
+        start: function(callback) {
+            var t = this;
+            if (!t.running && (!t.countdown || t.countdown && t.time.time > 0)) {
+                t.face.start(t.time);
+                t.timer.start(function() {
+                    t.flip();
+                    if (typeof callback === "function") {
+                        callback();
+                    }
+                });
+            } else {
+                t.log('Trying to start timer when countdown already at 0');
+            }
+        },
+        stop: function(callback) {
+            this.face.stop();
+            this.timer.stop(callback);
+            for (var x in this.lists) {
+                if (this.lists.hasOwnProperty(x)) {
+                    this.lists[x].stop();
+                }
+            }
+        },
+        reset: function(callback) {
+            this.timer.reset(callback);
+            this.face.reset();
+        },
+        setTime: function(time) {
+            this.time.time = time;
+            this.flip(true);
+        },
+        getTime: function(time) {
+            return this.time;
+        },
+        setCountdown: function(value) {
+            var running = this.running;
+            this.countdown = value ? true: false;
+            if (running) {
+                this.stop();
+                this.start();
+            }
+        },
+        flip: function(doNotAddPlayClass) {
+            this.face.flip(false, doNotAddPlayClass);
+        }
+    });
+} (jQuery)); (function($) {
+    "use strict";
+    FlipClock.List = FlipClock.Base.extend({
+        digit: 0,
+        classes: {
+            active: 'flip-clock-active',
+            before: 'flip-clock-before',
+            flip: 'flip'
+        },
+        factory: false,
+        $el: false,
+        $obj: false,
+        items: [],
+        lastDigit: 0,
+        constructor: function(factory, digit, options) {
+            this.factory = factory;
+            this.digit = digit;
+            this.lastDigit = digit;
+            this.$el = this.createList();
+            this.$obj = this.$el;
+            if (digit > 0) {
+                this.select(digit);
+            }
+            this.factory.$el.append(this.$el);
+        },
+        select: function(digit) {
+            if (typeof digit === "undefined") {
+                digit = this.digit;
+            } else {
+                this.digit = digit;
+            }
+            if (this.digit != this.lastDigit) {
+                var $delete = this.$el.find('.' + this.classes.before).removeClass(this.classes.before);
+                this.$el.find('.' + this.classes.active).removeClass(this.classes.active).addClass(this.classes.before);
+                this.appendListItem(this.classes.active, this.digit);
+                $delete.remove();
+                this.lastDigit = this.digit;
+            }
+        },
+        play: function() {
+            this.$el.addClass(this.factory.classes.play);
+        },
+        stop: function() {
+            var t = this;
+            setTimeout(function() {
+                t.$el.removeClass(t.factory.classes.play);
+            },
+            this.factory.timer.interval);
+        },
+        createListItem: function(css, value) {
+            return ['<li class="' + (css ? css: '') + '">', '<a href="#">', '<div class="up">', '<div class="shadow"></div>', '<div class="inn">' + (value ? value: '') + '</div>', '</div>', '<div class="down">', '<div class="shadow"></div>', '<div class="inn">' + (value ? value: '') + '</div>', '</div>', '</a>', '</li>'].join('');
+        },
+        appendListItem: function(css, value) {
+            var html = this.createListItem(css, value);
+            this.$el.append(html);
+        },
+        createList: function() {
+            var lastDigit = this.getPrevDigit() ? this.getPrevDigit() : this.digit;
+            var html = $(['<ul class="' + this.classes.flip + ' ' + (this.factory.running ? this.factory.classes.play: '') + '">', this.createListItem(this.classes.before, lastDigit), this.createListItem(this.classes.active, this.digit), '</ul>'].join(''));
+            return html;
+        },
+        getNextDigit: function() {
+            return this.digit == 9 ? 0 : this.digit + 1;
+        },
+        getPrevDigit: function() {
+            return this.digit == 0 ? 9 : this.digit - 1;
+        }
+    });
+} (jQuery)); (function($) {
+    "use strict";
+    String.prototype.ucfirst = function() {
+        return this.substr(0, 1).toUpperCase() + this.substr(1);
+    };
+    $.fn.FlipClock = function(digit, options) {
+        return new FlipClock($(this), digit, options);
+    };
+    $.fn.flipClock = function(digit, options) {
+        return $.fn.FlipClock(digit, options);
+    };
+} (jQuery)); (function($) {
+    "use strict";
+    FlipClock.Time = FlipClock.Base.extend({
+        time: 0,
+        factory: false,
+        minimumDigits: 0,
+        constructor: function(factory, time, options) {
+            if (typeof options != "object") {
+                options = {};
+            }
+            if (!options.minimumDigits) {
+                options.minimumDigits = factory.minimumDigits;
+            }
+            this.base(options);
+            this.factory = factory;
+            if (time) {
+                this.time = time;
+            }
+        },
+        convertDigitsToArray: function(str) {
+            var data = [];
+            str = str.toString();
+            for (var x = 0; x < str.length; x++) {
+                if (str[x].match(/^\d*$/g)) {
+                    data.push(str[x]);
+                }
+            }
+            return data;
+        },
+        digit: function(i) {
+            var timeStr = this.toString();
+            var length = timeStr.length;
+            if (timeStr[length - i]) {
+                return timeStr[length - i];
+            }
+            return false;
+        },
+        digitize: function(obj) {
+            var data = [];
+            $.each(obj,
+            function(i, value) {
+                value = value.toString();
+                if (value.length == 1) {
+                    value = '0' + value;
+                }
+                for (var x = 0; x < value.length; x++) {
+                    data.push(value.charAt(x));
+                }
+            });
+            if (data.length > this.minimumDigits) {
+                this.minimumDigits = data.length;
+            }
+            if (this.minimumDigits > data.length) {
+                for (var x = data.length; x < this.minimumDigits; x++) {
+                    data.unshift('0');
+                }
+            }
+            return data;
+        },
+        getDateObject: function() {
+            if (this.time instanceof Date) {
+                return this.time;
+            }
+            return new Date((new Date()).getTime() + this.getTimeSeconds() * 1000);
+        },
+        getDayCounter: function(includeSeconds) {
+            var digits = [this.getDays(), this.getHours(true), this.getMinutes(true)];
+            if (includeSeconds) {
+                digits.push(this.getSeconds(true));
+            }
+            return this.digitize(digits);
+        },
+        getDays: function(mod) {
+            var days = this.getTimeSeconds() / 60 / 60 / 24;
+            if (mod) {
+                days = days % 7;
+            }
+            return Math.floor(days);
+        },
+        getHourCounter: function() {
+            var obj = this.digitize([this.getHours(), this.getMinutes(true), this.getSeconds(true)]);
+            return obj;
+        },
+        getHourly: function() {
+            return this.getHourCounter();
+        },
+        getHours: function(mod) {
+            var hours = this.getTimeSeconds() / 60 / 60;
+            if (mod) {
+                hours = hours % 24;
+            }
+            return Math.floor(hours);
+        },
+        getMilitaryTime: function(date, showSeconds) {
+            if (typeof showSeconds === "undefined") {
+                showSeconds = true;
+            }
+            if (!date) {
+                date = this.getDateObject();
+            }
+            var data = [date.getHours(), date.getMinutes()];
+            if (showSeconds === true) {
+                data.push(date.getSeconds());
+            }
+            return this.digitize(data);
+        },
+        getMinutes: function(mod) {
+            var minutes = this.getTimeSeconds() / 60;
+            if (mod) {
+                minutes = minutes % 60;
+            }
+            return Math.floor(minutes);
+        },
+        getMinuteCounter: function() {
+            var obj = this.digitize([this.getMinutes(), this.getSeconds(true)]);
+            return obj;
+        },
+        getTimeSeconds: function(date) {
+            if (!date) {
+                date = new Date();
+            }
+            if (this.time instanceof Date) {
+                if (this.factory.countdown) {
+                    return Math.max(this.time.getTime() / 1000 - date.getTime() / 1000, 0);
+                } else {
+                    return date.getTime() / 1000 - this.time.getTime() / 1000;
+                }
+            } else {
+                return this.time;
+            }
+        },
+        getTime: function(date, showSeconds) {
+            if (typeof showSeconds === "undefined") {
+                showSeconds = true;
+            }
+            if (!date) {
+                date = this.getDateObject();
+            }
+            console.log(date);
+            var hours = date.getHours();
+            var merid = hours > 12 ? 'PM': 'AM';
+            var data = [hours > 12 ? hours - 12 : (hours === 0 ? 12 : hours), date.getMinutes()];
+            if (showSeconds === true) {
+                data.push(date.getSeconds());
+            }
+            return this.digitize(data);
+        },
+        getSeconds: function(mod) {
+            var seconds = this.getTimeSeconds();
+            if (mod) {
+                if (seconds == 60) {
+                    seconds = 0;
+                } else {
+                    seconds = seconds % 60;
+                }
+            }
+            return Math.ceil(seconds);
+        },
+        getWeeks: function(mod) {
+            var weeks = this.getTimeSeconds() / 60 / 60 / 24 / 7;
+            if (mod) {
+                weeks = weeks % 52;
+            }
+            return Math.floor(weeks);
+        },
+        removeLeadingZeros: function(totalDigits, digits) {
+            var total = 0;
+            var newArray = [];
+            $.each(digits,
+            function(i, digit) {
+                if (i < totalDigits) {
+                    total += parseInt(digits[i], 10);
+                } else {
+                    newArray.push(digits[i]);
+                }
+            });
+            if (total === 0) {
+                return newArray;
+            }
+            return digits;
+        },
+        addSeconds: function(x) {
+            if (this.time instanceof Date) {
+                this.time.setSeconds(this.time.getSeconds() + x);
+            } else {
+                this.time += x;
+            }
+        },
+        addSecond: function() {
+            this.addSeconds(1);
+        },
+        subSeconds: function(x) {
+            if (this.time instanceof Date) {
+                this.time.setSeconds(this.time.getSeconds() - x);
+            } else {
+                this.time -= x;
+            }
+        },
+        subSecond: function() {
+            this.subSeconds(1);
+        },
+        toString: function() {
+            return this.getTimeSeconds().toString();
+        }
+    });
+} (jQuery)); (function($) {
+    "use strict";
+    FlipClock.Timer = FlipClock.Base.extend({
+        callbacks: {
+            destroy: false,
+            create: false,
+            init: false,
+            interval: false,
+            start: false,
+            stop: false,
+            reset: false
+        },
+        count: 0,
+        factory: false,
+        interval: 1000,
+        animationRate: 1000,
+        constructor: function(factory, options) {
+            this.base(options);
+            this.factory = factory;
+            this.callback(this.callbacks.init);
+            this.callback(this.callbacks.create);
+        },
+        getElapsed: function() {
+            return this.count * this.interval;
+        },
+        getElapsedTime: function() {
+            return new Date(this.time + this.getElapsed());
+        },
+        reset: function(callback) {
+            clearInterval(this.timer);
+            this.count = 0;
+            this._setInterval(callback);
+            this.callback(this.callbacks.reset);
+        },
+        start: function(callback) {
+            this.factory.running = true;
+            this._createTimer(callback);
+            this.callback(this.callbacks.start);
+        },
+        stop: function(callback) {
+            this.factory.running = false;
+            this._clearInterval(callback);
+            this.callback(this.callbacks.stop);
+            this.callback(callback);
+        },
+        _clearInterval: function() {
+            clearInterval(this.timer);
+        },
+        _createTimer: function(callback) {
+            this._setInterval(callback);
+        },
+        _destroyTimer: function(callback) {
+            this._clearInterval();
+            this.timer = false;
+            this.callback(callback);
+            this.callback(this.callbacks.destroy);
+        },
+        _interval: function(callback) {
+            this.callback(this.callbacks.interval);
+            this.callback(callback);
+            this.count++;
+        },
+        _setInterval: function(callback) {
+            var t = this;
+            t._interval(callback);
+            t.timer = setInterval(function() {
+                t._interval(callback);
+            },
+            this.interval);
+        }
+    });
+} (jQuery)); (function($) {
+    FlipClock.TwentyFourHourClockFace = FlipClock.Face.extend({
+        constructor: function(factory, options) {
+            this.base(factory, options);
+        },
+        build: function(time) {
+            var t = this;
+            var children = this.factory.$el.find('ul');
+            if (!this.factory.time.time) {
+                this.factory.original = new Date();
+                this.factory.time = new FlipClock.Time(this.factory, this.factory.original);
+            }
+            var time = time ? time: this.factory.time.getMilitaryTime(false, this.showSeconds);
+            if (time.length > children.length) {
+                $.each(time,
+                function(i, digit) {
+                    t.createList(digit);
+                });
+            }
+            this.createDivider();
+            this.createDivider();
+            $(this.dividers[0]).insertBefore(this.lists[this.lists.length - 2].$el);
+            $(this.dividers[1]).insertBefore(this.lists[this.lists.length - 4].$el);
+            this.base();
+        },
+        flip: function(time, doNotAddPlayClass) {
+            this.autoIncrement();
+            time = time ? time: this.factory.time.getMilitaryTime(false, this.showSeconds);
+            this.base(time, doNotAddPlayClass);
+        }
+    });
+} (jQuery)); (function($) {
+    FlipClock.CounterFace = FlipClock.Face.extend({
+        shouldAutoIncrement: false,
+        constructor: function(factory, options) {
+            if (typeof options != "object") {
+                options = {};
+            }
+            factory.autoStart = options.autoStart ? true: false;
+            if (options.autoStart) {
+                this.shouldAutoIncrement = true;
+            }
+            factory.increment = function() {
+                factory.countdown = false;
+                factory.setTime(factory.getTime().getTimeSeconds() + 1);
+            };
+            factory.decrement = function() {
+                factory.countdown = true;
+                var time = factory.getTime().getTimeSeconds();
+                if (time > 0) {
+                    factory.setTime(time - 1);
+                }
+            };
+            factory.setValue = function(digits) {
+                factory.setTime(digits);
+            };
+            factory.setCounter = function(digits) {
+                factory.setTime(digits);
+            };
+            this.base(factory, options);
+        },
+        build: function() {
+            var t = this;
+            var children = this.factory.$el.find('ul');
+            var time = this.factory.getTime().digitize([this.factory.getTime().time]);
+            if (time.length > children.length) {
+                $.each(time,
+                function(i, digit) {
+                    var list = t.createList(digit);
+                    list.select(digit);
+                });
+            }
+            $.each(this.lists,
+            function(i, list) {
+                list.play();
+            });
+            this.base();
+        },
+        flip: function(time, doNotAddPlayClass) {
+            if (this.shouldAutoIncrement) {
+                this.autoIncrement();
+            }
+            if (!time) {
+                time = this.factory.getTime().digitize([this.factory.getTime().time]);
+            }
+            this.base(time, doNotAddPlayClass);
+        },
+        reset: function() {
+            this.factory.time = new FlipClock.Time(this.factory, this.factory.original ? Math.round(this.factory.original) : 0);
+            this.flip();
+        }
+    });
+} (jQuery)); (function($) {
+    FlipClock.DailyCounterFace = FlipClock.Face.extend({
+        showSeconds: true,
+        constructor: function(factory, options) {
+            this.base(factory, options);
+        },
+        build: function(time) {
+            var t = this;
+            var children = this.factory.$el.find('ul');
+            var offset = 0;
+            time = time ? time: this.factory.time.getDayCounter(this.showSeconds);
+            if (time.length > children.length) {
+                $.each(time,
+                function(i, digit) {
+                    t.createList(digit);
+                });
+            }
+            if (this.showSeconds) {
+                $(this.createDivider('Seconds')).insertBefore(this.lists[this.lists.length - 2].$el);
+            } else {
+                offset = 2;
+            }
+            $(this.createDivider('Minutes')).insertBefore(this.lists[this.lists.length - 4 + offset].$el);
+            $(this.createDivider('Hours')).insertBefore(this.lists[this.lists.length - 6 + offset].$el);
+            $(this.createDivider('Days', true)).insertBefore(this.lists[0].$el);
+            this.base();
+        },
+        flip: function(time, doNotAddPlayClass) {
+            if (!time) {
+                time = this.factory.time.getDayCounter(this.showSeconds);
+            }
+            this.autoIncrement();
+            this.base(time, doNotAddPlayClass);
+        }
+    });
+} (jQuery)); (function($) {
+    FlipClock.HourlyCounterFace = FlipClock.Face.extend({
+        constructor: function(factory, options) {
+            this.base(factory, options);
+        },
+        build: function(excludeHours, time) {
+            var t = this;
+            var children = this.factory.$el.find('ul');
+            time = time ? time: this.factory.time.getHourCounter();
+            if (time.length > children.length) {
+                $.each(time,
+                function(i, digit) {
+                    t.createList(digit);
+                });
+            }
+            $(this.createDivider('Seconds')).insertBefore(this.lists[this.lists.length - 2].$el);
+            $(this.createDivider('Minutes')).insertBefore(this.lists[this.lists.length - 4].$el);
+            if (!excludeHours) {
+                $(this.createDivider('Hours', true)).insertBefore(this.lists[0].$el);
+            }
+            this.base();
+        },
+        flip: function(time, doNotAddPlayClass) {
+            if (!time) {
+                time = this.factory.time.getHourCounter();
+            }
+            this.autoIncrement();
+            this.base(time, doNotAddPlayClass);
+        },
+        appendDigitToClock: function(obj) {
+            this.base(obj);
+            this.dividers[0].insertAfter(this.dividers[0].next());
+        }
+    });
+} (jQuery)); (function($) {
+    FlipClock.MinuteCounterFace = FlipClock.HourlyCounterFace.extend({
+        clearExcessDigits: false,
+        constructor: function(factory, options) {
+            this.base(factory, options);
+        },
+        build: function() {
+            this.base(true, this.factory.time.getMinuteCounter());
+        },
+        flip: function(time, doNotAddPlayClass) {
+            if (!time) {
+                time = this.factory.time.getMinuteCounter();
+            }
+            this.base(time, doNotAddPlayClass);
+        }
+    });
+} (jQuery)); (function($) {
+    FlipClock.TwelveHourClockFace = FlipClock.TwentyFourHourClockFace.extend({
+        meridium: false,
+        meridiumText: 'AM',
+        build: function() {
+            var t = this;
+            var time = this.factory.time.getTime(false, this.showSeconds);
+            this.base(time);
+            this.meridiumText = this.getMeridium();
+            this.meridium = $(['<ul class="flip-clock-meridium">', '<li>', '<a href="#">' + this.meridiumText + '</a>', '</li>', '</ul>'].join(''));
+            this.meridium.insertAfter(this.lists[this.lists.length - 1].$el);
+        },
+        flip: function(time, doNotAddPlayClass) {
+            if (this.meridiumText != this.getMeridium()) {
+                this.meridiumText = this.getMeridium();
+                this.meridium.find('a').html(this.meridiumText);
+            }
+            this.base(this.factory.time.getTime(false, this.showSeconds), doNotAddPlayClass);
+        },
+        getMeridium: function() {
+            return new Date().getHours() >= 12 ? 'PM': 'AM';
+        },
+        isPM: function() {
+            return this.getMeridium() == 'PM' ? true: false;
+        },
+        isAM: function() {
+            return this.getMeridium() == 'AM' ? true: false;
+        }
+    });
+} (jQuery)); (function($) {
+    FlipClock.Lang.Arabic = {
+        'years': '爻賳賵丕鬲',
+        'months': '卮賴賵乇',
+        'days': '兀賷丕賲',
+        'hours': '爻丕毓丕鬲',
+        'minutes': '丿賯丕卅賯',
+        'seconds': '孬賵丕賳賷'
+    };
+    FlipClock.Lang['ar'] = FlipClock.Lang.Arabic;
+    FlipClock.Lang['ar-ar'] = FlipClock.Lang.Arabic;
+    FlipClock.Lang['arabic'] = FlipClock.Lang.Arabic;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Danish = {
+        'years': '脜r',
+        'months': 'M氓neder',
+        'days': 'Dage',
+        'hours': 'Timer',
+        'minutes': 'Minutter',
+        'seconds': 'Sekunder'
+    };
+    FlipClock.Lang['da'] = FlipClock.Lang.Danish;
+    FlipClock.Lang['da-dk'] = FlipClock.Lang.Danish;
+    FlipClock.Lang['danish'] = FlipClock.Lang.Danish;
+} (jQuery)); (function($) {
+    FlipClock.Lang.German = {
+        'years': 'Jahre',
+        'months': 'Monate',
+        'days': 'Tage',
+        'hours': 'Stunden',
+        'minutes': 'Minuten',
+        'seconds': 'Sekunden'
+    };
+    FlipClock.Lang['de'] = FlipClock.Lang.German;
+    FlipClock.Lang['de-de'] = FlipClock.Lang.German;
+    FlipClock.Lang['german'] = FlipClock.Lang.German;
+} (jQuery)); (function($) {
+    FlipClock.Lang.English = {
+        'years': 'Years',
+        'months': 'Months',
+        'days': 'Days',
+        'hours': 'Hours',
+        'minutes': 'Minutes',
+        'seconds': 'Seconds'
+    };
+    FlipClock.Lang['en'] = FlipClock.Lang.English;
+    FlipClock.Lang['en-us'] = FlipClock.Lang.English;
+    FlipClock.Lang['english'] = FlipClock.Lang.English;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Spanish = {
+        'years': 'A帽os',
+        'months': 'Meses',
+        'days': 'D铆as',
+        'hours': 'Horas',
+        'minutes': 'Minutos',
+        'seconds': 'Segundos'
+    };
+    FlipClock.Lang['es'] = FlipClock.Lang.Spanish;
+    FlipClock.Lang['es-es'] = FlipClock.Lang.Spanish;
+    FlipClock.Lang['spanish'] = FlipClock.Lang.Spanish;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Finnish = {
+        'years': 'Vuotta',
+        'months': 'Kuukautta',
+        'days': 'P盲iv盲盲',
+        'hours': 'Tuntia',
+        'minutes': 'Minuuttia',
+        'seconds': 'Sekuntia'
+    };
+    FlipClock.Lang['fi'] = FlipClock.Lang.Finnish;
+    FlipClock.Lang['fi-fi'] = FlipClock.Lang.Finnish;
+    FlipClock.Lang['finnish'] = FlipClock.Lang.Finnish;
+} (jQuery)); (function($) {
+    FlipClock.Lang.French = {
+        'years': 'Ans',
+        'months': 'Mois',
+        'days': 'Jours',
+        'hours': 'Heures',
+        'minutes': 'Minutes',
+        'seconds': 'Secondes'
+    };
+    FlipClock.Lang['fr'] = FlipClock.Lang.French;
+    FlipClock.Lang['fr-ca'] = FlipClock.Lang.French;
+    FlipClock.Lang['french'] = FlipClock.Lang.French;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Italian = {
+        'years': 'Anni',
+        'months': 'Mesi',
+        'days': 'Giorni',
+        'hours': 'Ore',
+        'minutes': 'Minuti',
+        'seconds': 'Secondi'
+    };
+    FlipClock.Lang['it'] = FlipClock.Lang.Italian;
+    FlipClock.Lang['it-it'] = FlipClock.Lang.Italian;
+    FlipClock.Lang['italian'] = FlipClock.Lang.Italian;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Latvian = {
+        'years': 'Gadi',
+        'months': 'M膿ne拧i',
+        'days': 'Dienas',
+        'hours': 'Stundas',
+        'minutes': 'Min奴tes',
+        'seconds': 'Sekundes'
+    };
+    FlipClock.Lang['lv'] = FlipClock.Lang.Latvian;
+    FlipClock.Lang['lv-lv'] = FlipClock.Lang.Latvian;
+    FlipClock.Lang['latvian'] = FlipClock.Lang.Latvian;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Dutch = {
+        'years': 'Jaren',
+        'months': 'Maanden',
+        'days': 'Dagen',
+        'hours': 'Uren',
+        'minutes': 'Minuten',
+        'seconds': 'Seconden'
+    };
+    FlipClock.Lang['nl'] = FlipClock.Lang.Dutch;
+    FlipClock.Lang['nl-be'] = FlipClock.Lang.Dutch;
+    FlipClock.Lang['dutch'] = FlipClock.Lang.Dutch;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Norwegian = {
+        'years': '脜r',
+        'months': 'M氓neder',
+        'days': 'Dager',
+        'hours': 'Timer',
+        'minutes': 'Minutter',
+        'seconds': 'Sekunder'
+    };
+    FlipClock.Lang['no'] = FlipClock.Lang.Norwegian;
+    FlipClock.Lang['nb'] = FlipClock.Lang.Norwegian;
+    FlipClock.Lang['no-nb'] = FlipClock.Lang.Norwegian;
+    FlipClock.Lang['norwegian'] = FlipClock.Lang.Norwegian;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Portuguese = {
+        'years': 'Anos',
+        'months': 'Meses',
+        'days': 'Dias',
+        'hours': 'Horas',
+        'minutes': 'Minutos',
+        'seconds': 'Segundos'
+    };
+    FlipClock.Lang['pt'] = FlipClock.Lang.Portuguese;
+    FlipClock.Lang['pt-br'] = FlipClock.Lang.Portuguese;
+    FlipClock.Lang['portuguese'] = FlipClock.Lang.Portuguese;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Russian = {
+        'years': '谢械褌',
+        'months': '屑械褋褟褑械胁',
+        'days': '写薪械泄',
+        'hours': '褔邪褋芯胁',
+        'minutes': '屑懈薪褍褌',
+        'seconds': '褋械泻褍薪写'
+    };
+    FlipClock.Lang['ru'] = FlipClock.Lang.Russian;
+    FlipClock.Lang['ru-ru'] = FlipClock.Lang.Russian;
+    FlipClock.Lang['russian'] = FlipClock.Lang.Russian;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Swedish = {
+        'years': '脜r',
+        'months': 'M氓nader',
+        'days': 'Dagar',
+        'hours': 'Timmar',
+        'minutes': 'Minuter',
+        'seconds': 'Sekunder'
+    };
+    FlipClock.Lang['sv'] = FlipClock.Lang.Swedish;
+    FlipClock.Lang['sv-se'] = FlipClock.Lang.Swedish;
+    FlipClock.Lang['swedish'] = FlipClock.Lang.Swedish;
+} (jQuery)); (function($) {
+    FlipClock.Lang.Chinese = {
+        'years': '年',
+        'months': '月',
+        'days': '天',
+        'hours': '小时',
+        'minutes': '分钟',
+        'seconds': '秒'
+    };
+    FlipClock.Lang['zh'] = FlipClock.Lang.Chinese;
+    FlipClock.Lang['zh-cn'] = FlipClock.Lang.Chinese;
+    FlipClock.Lang['chinese'] = FlipClock.Lang.Chinese;
+} (jQuery));</script>
+
+<style>
+/* Get the bourbon mixin from http://bourbon.io */
+/* Reset */
+.flip-clock-wrapper * {
+    -webkit-box-sizing: border-box;
+    -moz-box-sizing: border-box;
+    -ms-box-sizing: border-box;
+    -o-box-sizing: border-box;
+    box-sizing: border-box;
+    -webkit-backface-visibility: hidden;
+    -moz-backface-visibility: hidden;
+    -ms-backface-visibility: hidden;
+    -o-backface-visibility: hidden;
+    backface-visibility: hidden;
+}
+
+.flip-clock-wrapper a {
+  cursor: pointer;
+  text-decoration: none;
+  color: #ccc; }
+
+.flip-clock-wrapper a:hover {
+  color: #fff; }
+
+.flip-clock-wrapper ul {
+  list-style: none; }
+
+.flip-clock-wrapper.clearfix:before,
+.flip-clock-wrapper.clearfix:after {
+  content: " ";
+  display: table; }
+
+.flip-clock-wrapper.clearfix:after {
+  clear: both; }
+
+.flip-clock-wrapper.clearfix {
+  *zoom: 1; }
+
+/* Main */
+.flip-clock-wrapper {
+  font: normal 16px Helvetica, sans-serif;
+  -webkit-user-select: none; }
+
+.flip-clock-meridium {
+  background: none !important;
+  box-shadow: 0 0 0 !important;
+  font-size: 36px !important; }
+
+.flip-clock-meridium a { color: #313333; }
+
+.flip-clock-wrapper {
+  text-align: center;
+  position: relative;
+  width: 100%;
+  margin: 1em;
+}
+
+.flip-clock-wrapper:before,
+.flip-clock-wrapper:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+.flip-clock-wrapper:after {
+    clear: both;
+}
+
+/* Skeleton */
+.flip-clock-wrapper ul {
+  position: relative;
+  float: left;
+  margin: 5px;
+  width: 60px;
+  height: 90px;
+  font-size: 80px;
+  font-weight: bold;
+  line-height: 87px;
+  border-radius: 12px;
+  background: #000;
+}
+
+.flip-clock-wrapper ul li {
+  z-index: 1;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  line-height: 87px;
+  text-decoration: none !important;
+}
+
+.flip-clock-wrapper ul li:first-child {
+  z-index: 2; }
+
+.flip-clock-wrapper ul li a {
+  display: block;
+  height: 100%;
+  -webkit-perspective: 200px;
+  -moz-perspective: 200px;
+  perspective: 200px;
+  margin: 0 !important;
+  overflow: visible !important;
+  cursor: default !important; }
+
+.flip-clock-wrapper ul li a div {
+  z-index: 1;
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 50%;
+  font-size: 80px;
+  overflow: hidden; 
+  outline: 1px solid transparent; }
+
+.flip-clock-wrapper ul li a div .shadow {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  z-index: 2; }
+
+.flip-clock-wrapper ul li a div.up {
+  -webkit-transform-origin: 50% 100%;
+  -moz-transform-origin: 50% 100%;
+  -ms-transform-origin: 50% 100%;
+  -o-transform-origin: 50% 100%;
+  transform-origin: 50% 100%;
+  top: 0; }
+
+.flip-clock-wrapper ul li a div.up:after {
+  content: "";
+  position: absolute;
+  top: 44px;
+  left: 0;
+  z-index: 5;
+  width: 100%;
+  height: 1px;
+
+  background-color: rgba(255, 255,255, 0.4);
+  }
+
+.flip-clock-wrapper ul li a div.down {
+  -webkit-transform-origin: 50% 0;
+  -moz-transform-origin: 50% 0;
+  -ms-transform-origin: 50% 0;
+  -o-transform-origin: 50% 0;
+  transform-origin: 50% 0;
+  bottom: 0;
+  border-bottom-left-radius: 6px;
+  border-bottom-right-radius: 6px;
+}
+
+.flip-clock-wrapper ul li a div div.inn {
+  position: absolute;
+  left: 0;
+  z-index: 1;
+  width: 100%;
+  height: 200%;
+  color: #de4848;
+/*  text-shadow: 0 1px 2px #000;*/
+  text-align: center;
+  background-color: #fff;
+  border-radius: 6px;
+  font-size: 70px; }
+
+.flip-clock-wrapper ul li a div.up div.inn {
+  top: 0; }
+
+.flip-clock-wrapper ul li a div.down div.inn {
+  bottom: 0; }
+
+/* PLAY */
+.flip-clock-wrapper ul.play li.flip-clock-before {
+  z-index: 3; }
+
+.flip-clock-wrapper .flip {  
+ -moz-box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.2), inset 2px 4px 0 0 rgba(255, 255, 255, 0.08);
+  -webkit-box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.2), inset 2px 4px 0 0 rgba(255, 255, 255, 0.08);
+  box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.2), inset 2px 4px 0 0 rgba(255, 255, 255, 0.08);
+/*box-shadow: 0 2px 5px rgba(0, 0, 0, 0.7); */
+}
+
+.flip-clock-wrapper ul.play li.flip-clock-active {
+  -webkit-animation: asd 0.5s 0.5s linear both;
+  -moz-animation: asd 0.5s 0.5s linear both;
+  animation: asd 0.5s 0.5s linear both;
+  z-index: 5; }
+
+.flip-clock-divider {
+  float: left;
+  display: inline-block;
+  position: relative;
+  width: 20px;
+  height: 100px; }
+
+.flip-clock-divider:first-child {
+  width: 0; }
+
+.flip-clock-dot {
+  display: none;
+  background:#f2f1ed;
+  width: 10px;
+  height: 10px;
+  position: absolute;
+  border-radius: 50%;
+/*  box-shadow: 0 0 5px rgba(0, 0, 0, 0.5);*/
+/* -moz-box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.2), inset 2px 4px 0 0 rgba(255, 255, 255, 0.08);*/
+/*  -webkit-box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.2), inset 2px 4px 0 0 rgba(255, 255, 255, 0.08);*/
+/*  box-shadow: 0 3px 4px 0 rgba(0, 0, 0, 0.2), inset 2px 4px 0 0 rgba(255, 255, 255, 0.08);*/
+  left: 5px; }
+
+.flip-clock-divider .flip-clock-label {
+  position: absolute;
+  top: -1.5em;
+  right: -86px;
+  color: black;
+  text-shadow: none; }
+
+.flip-clock-divider.minutes .flip-clock-label {
+  right: -88px; }
+
+.flip-clock-divider.seconds .flip-clock-label {
+  right: -91px; }
+
+.flip-clock-dot.top {
+  top: 30px; }
+
+.flip-clock-dot.bottom {
+  bottom: 30px; }
+
+@-webkit-keyframes asd {
+  0% {
+    z-index: 2; }
+
+  20% {
+    z-index: 4; }
+
+  100% {
+    z-index: 4; } }
+
+@-moz-keyframes asd {
+  0% {
+    z-index: 2; }
+
+  20% {
+    z-index: 4; }
+
+  100% {
+    z-index: 4; } }
+
+@-o-keyframes asd {
+  0% {
+    z-index: 2; }
+
+  20% {
+    z-index: 4; }
+
+  100% {
+    z-index: 4; } }
+
+@keyframes asd {
+  0% {
+    z-index: 2; }
+
+  20% {
+    z-index: 4; }
+
+  100% {
+    z-index: 4; } }
+
+.flip-clock-wrapper ul.play li.flip-clock-active .down {
+  z-index: 2;
+  -webkit-animation: turn 0.5s 0.5s linear both;
+  -moz-animation: turn 0.5s 0.5s linear both;
+  animation: turn 0.5s 0.5s linear both; }
+
+@-webkit-keyframes turn {
+  0% {
+    -webkit-transform: rotateX(90deg); }
+
+  100% {
+    -webkit-transform: rotateX(0deg); } }
+
+@-moz-keyframes turn {
+  0% {
+    -moz-transform: rotateX(90deg); }
+
+  100% {
+    -moz-transform: rotateX(0deg); } }
+
+@-o-keyframes turn {
+  0% {
+    -o-transform: rotateX(90deg); }
+
+  100% {
+    -o-transform: rotateX(0deg); } }
+
+@keyframes turn {
+  0% {
+    transform: rotateX(90deg); }
+
+  100% {
+    transform: rotateX(0deg); } }
+
+.flip-clock-wrapper ul.play li.flip-clock-before .up {
+  z-index: 2;
+  -webkit-animation: turn2 0.5s linear both;
+  -moz-animation: turn2 0.5s linear both;
+  animation: turn2 0.5s linear both; }
+
+@-webkit-keyframes turn2 {
+  0% {
+    -webkit-transform: rotateX(0deg); }
+
+  100% {
+    -webkit-transform: rotateX(-90deg); } }
+
+@-moz-keyframes turn2 {
+  0% {
+    -moz-transform: rotateX(0deg); }
+
+  100% {
+    -moz-transform: rotateX(-90deg); } }
+
+@-o-keyframes turn2 {
+  0% {
+    -o-transform: rotateX(0deg); }
+
+  100% {
+    -o-transform: rotateX(-90deg); } }
+
+@keyframes turn2 {
+  0% {
+    transform: rotateX(0deg); }
+
+  100% {
+    transform: rotateX(-90deg); } }
+
+.flip-clock-wrapper ul li.flip-clock-active {
+  z-index: 3; }
+
+/* SHADOW */
+.flip-clock-wrapper ul.play li.flip-clock-before .up .shadow {
+  background: -moz-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, black 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(0, 0, 0, 0.1)), color-stop(100%, black));
+  background: linear, top, rgba(0, 0, 0, 0.1) 0%, black 100%;
+  background: -o-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, black 100%);
+  background: -ms-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, black 100%);
+  background: linear, to bottom, rgba(0, 0, 0, 0.1) 0%, black 100%;
+  -webkit-animation: show 0.5s linear both;
+  -moz-animation: show 0.5s linear both;
+  animation: show 0.5s linear both; }
+
+.flip-clock-wrapper ul.play li.flip-clock-active .up .shadow {
+  background: -moz-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, black 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, rgba(0, 0, 0, 0.1)), color-stop(100%, black));
+  background: linear, top, rgba(0, 0, 0, 0.1) 0%, black 100%;
+  background: -o-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, black 100%);
+  background: -ms-linear-gradient(top, rgba(0, 0, 0, 0.1) 0%, black 100%);
+  background: linear, to bottom, rgba(0, 0, 0, 0.1) 0%, black 100%;
+  -webkit-animation: hide 0.5s 0.3s linear both;
+  -moz-animation: hide 0.5s 0.3s linear both;
+  animation: hide 0.5s 0.3s linear both; }
+
+/*DOWN*/
+.flip-clock-wrapper ul.play li.flip-clock-before .down .shadow {
+  background: -moz-linear-gradient(top, black 0%, rgba(0, 0, 0, 0.1) 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, black), color-stop(100%, rgba(0, 0, 0, 0.1)));
+  background: linear, top, black 0%, rgba(0, 0, 0, 0.1) 100%;
+  background: -o-linear-gradient(top, black 0%, rgba(0, 0, 0, 0.1) 100%);
+  background: -ms-linear-gradient(top, black 0%, rgba(0, 0, 0, 0.1) 100%);
+  background: linear, to bottom, black 0%, rgba(0, 0, 0, 0.1) 100%;
+  -webkit-animation: show 0.5s linear both;
+  -moz-animation: show 0.5s linear both;
+  animation: show 0.5s linear both; }
+
+.flip-clock-wrapper ul.play li.flip-clock-active .down .shadow {
+  background: -moz-linear-gradient(top, black 0%, rgba(0, 0, 0, 0.1) 100%);
+  background: -webkit-gradient(linear, left top, left bottom, color-stop(0%, black), color-stop(100%, rgba(0, 0, 0, 0.1)));
+  background: linear, top, black 0%, rgba(0, 0, 0, 0.1) 100%;
+  background: -o-linear-gradient(top, black 0%, rgba(0, 0, 0, 0.1) 100%);
+  background: -ms-linear-gradient(top, black 0%, rgba(0, 0, 0, 0.1) 100%);
+  background: linear, to bottom, black 0%, rgba(0, 0, 0, 0.1) 100%;
+  -webkit-animation: hide 0.5s 0.3s linear both;
+  -moz-animation: hide 0.5s 0.3s linear both;
+  animation: hide 0.5s 0.2s linear both; }
+
+@-webkit-keyframes show {
+  0% {
+    opacity: 0; }
+
+  100% {
+    opacity: 1; } }
+
+@-moz-keyframes show {
+  0% {
+    opacity: 0; }
+
+  100% {
+    opacity: 1; } }
+
+@-o-keyframes show {
+  0% {
+    opacity: 0; }
+
+  100% {
+    opacity: 1; } }
+
+@keyframes show {
+  0% {
+    opacity: 0; }
+
+  100% {
+    opacity: 1; } }
+
+@-webkit-keyframes hide {
+  0% {
+    opacity: 1; }
+
+  100% {
+    opacity: 0; } }
+
+@-moz-keyframes hide {
+  0% {
+    opacity: 1; }
+
+  100% {
+    opacity: 0; } }
+
+@-o-keyframes hide {
+  0% {
+    opacity: 1; }
+
+  100% {
+    opacity: 0; } }
+
+@keyframes hide {
+  0% {
+    opacity: 1; }
+
+  100% {
+    opacity: 0; } }
+	*{font-family:arial}
+h1 {
+  margin: 25px 0 40px 0;
+  text-align: center;
+  font: 300 1.5em "arial";
+  text-transform: uppercase;
+}
+h1 strong {
+  font-weight: 400;
+/*  color: #ea4c4c;*/
+}
+h1 span{font-size:0.7em}
+.wrap{width:680px;margin:0;padding:0;}
+ body {
+  background-color: #fff;margin:0;padding:0;overflow:hidden
+}
+</style>
+</head>
+<body>
+<div class="wrap" id="wrap"> <h1><b id="dayinfo">2020除夕放假</b><strong>倒计时</strong> </h1><div class="clock flip-clock-wrapper" style="margin:2em;"><span class="flip-clock-divider days"><span class="flip-clock-label">天</span></span><ul class="flip "><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">9</div></div><div class="down"><div class="shadow"></div><div class="inn">9</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">0</div></div><div class="down"><div class="shadow"></div><div class="inn">0</div></div></a></li></ul><ul class="flip "><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">0</div></div><div class="down"><div class="shadow"></div><div class="inn">0</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">4</div></div><div class="down"><div class="shadow"></div><div class="inn">4</div></div></a></li></ul><span class="flip-clock-divider hours"><span class="flip-clock-label">小时</span><span class="flip-clock-dot top"></span><span class="flip-clock-dot bottom"></span></span><ul class="flip "><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">0</div></div><div class="down"><div class="shadow"></div><div class="inn">0</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">1</div></div><div class="down"><div class="shadow"></div><div class="inn">1</div></div></a></li></ul><ul class="flip "><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">0</div></div><div class="down"><div class="shadow"></div><div class="inn">0</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">4</div></div><div class="down"><div class="shadow"></div><div class="inn">4</div></div></a></li></ul><span class="flip-clock-divider minutes"><span class="flip-clock-label">分钟</span><span class="flip-clock-dot top"></span><span class="flip-clock-dot bottom"></span></span><ul class="flip "><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">0</div></div><div class="down"><div class="shadow"></div><div class="inn">0</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">4</div></div><div class="down"><div class="shadow"></div><div class="inn">4</div></div></a></li></ul><ul class="flip  play"><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">7</div></div><div class="down"><div class="shadow"></div><div class="inn">7</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">6</div></div><div class="down"><div class="shadow"></div><div class="inn">6</div></div></a></li></ul><span class="flip-clock-divider seconds"><span class="flip-clock-label">秒</span><span class="flip-clock-dot top"></span><span class="flip-clock-dot bottom"></span></span><ul class="flip  play"><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">5</div></div><div class="down"><div class="shadow"></div><div class="inn">5</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">4</div></div><div class="down"><div class="shadow"></div><div class="inn">4</div></div></a></li></ul><ul class="flip  play"><li class="flip-clock-before"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">9</div></div><div class="down"><div class="shadow"></div><div class="inn">9</div></div></a></li><li class="flip-clock-active"><a href="#"><div class="up"><div class="shadow"></div><div class="inn">8</div></div><div class="down"><div class="shadow"></div><div class="inn">8</div></div></a></li></ul></div>
+<div class="message"></div>
+
+</div>
+
+<script type="text/javascript">
+
+		var clock;
+		
+		$(document).ready(function() {
+			var clock;
+var d2=new Date("2020/01/24 00:00:00");
+var d1=new Date();
+var d3=(d2-d1)/1000;
+
+if(d3<0){
+if(d3>-864000){//保持10天
+$("#wrap").html("<img src='/static/w2a/imgs/202011.png' style='width:600px;height:auto'>")
+return
+}else{
+
+}
+
+var d2=new Date("2020/02/08 00:00:00");
+var d3=(d2-d1)/1000;
+
+$("#dayinfo").html("元宵节")
+}
+			clock = $('.clock').FlipClock({
+		        clockFace: 'DailyCounter',
+		        autoStart: false,
+		        callbacks: {
+		        	stop: function() {
+		        		$('.message').html('The clock has stopped!')
+		        	}
+		        }
+		    });
+				    
+		    clock.setTime(Math.round(d3));
+		    clock.setCountdown(true);
+		    clock.start();
+
+		});
+		document.oncontextmenu=new Function("return false");
+document.onselectstart=new Function("return false");
+	</script>
+
+</body></html>
